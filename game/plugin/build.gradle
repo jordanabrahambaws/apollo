@@ -11,10 +11,39 @@ buildscript {
     }
 }
 
+apply plugin: 'jacoco'
+
 subprojects { subproj ->
     if (subproj.buildFile.exists()) {
         apply plugin: 'apollo-plugin'
+        apply plugin: 'jacoco'
         apply plugin: 'org.junit.platform.gradle.plugin'
+
+        idea {
+            module {
+                try {
+                    outputDir = sourceSets.main.output.classesDirs.find { it.path.contains("kotlin") }
+                } catch (ignored) {
+                    // Support older versions of Gradle where only a single class directory is used.
+                    outputDir = sourceSets.main.output.classesDir
+                }
+            }
+        }
+
+        jacoco {
+            toolVersion = '0.7.9'
+            applyTo junitPlatformTest
+        }
+
+        jacocoTestReport {
+            sourceSets(sourceSets.main)
+        }
+
+        junitPlatformTest {
+            jacoco {
+                destinationFile = file("${buildDir}/jacoco/test.exec")
+            }
+        }
 
         repositories {
             mavenCentral()
@@ -22,5 +51,21 @@ subprojects { subproj ->
                 url { 'https://dl.bintray.com/kotlin/kotlinx/' }
             }
         }
+    }
+}
+
+
+task jacocoRootReport(type: org.gradle.testing.jacoco.tasks.JacocoReport) {
+    def pluginSubprojects = subprojects.findAll { it.buildFile.exists() }
+
+    dependsOn = pluginSubprojects.test
+    additionalSourceDirs = files(pluginSubprojects.sourceSets.main.allSource.srcDirs)
+    sourceDirectories = files(pluginSubprojects.sourceSets.main.allSource.srcDirs)
+    classDirectories = files(pluginSubprojects.sourceSets.main.output)
+    executionData = files(pluginSubprojects.jacocoTestReport.executionData)
+    reports {
+        html.enabled = true
+        xml.enabled = true
+        csv.enabled = false
     }
 }

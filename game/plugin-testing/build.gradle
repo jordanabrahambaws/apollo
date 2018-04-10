@@ -17,6 +17,4 @@ dependencies {
     }
 
     compile "io.mockk:mockk:1.7.15"
-    compile group: 'org.assertj', name: 'assertj-core', version: '3.8.0'
-    compile 'com.willowtreeapps.assertk:assertk:0.9'
 }
